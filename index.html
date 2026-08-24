@@ -202,7 +202,7 @@ h2 { font-size: clamp(1.9rem, 4vw, 3rem); }
 .nav-toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
 .hero {
-  position: relative; min-height: 100svh;
+  position: relative; min-height: 100vh; min-height: 100svh;
   display: flex; align-items: center;
   overflow: hidden;
   background: radial-gradient(circle at 70% 30%, #14264d 0%, var(--navy-900) 55%);
@@ -930,6 +930,85 @@ img.brand-logo { width: auto; height: auto; max-width: 46px; max-height: 46px; o
   .reveal, .reveal-left, .reveal-right, .reveal-zoom { filter: none !important; }
 }
 
+/* ============ SLICED-IMAGE REVEAL (product cards) ============ */
+.img-slice {
+  position: absolute; top: 0; height: 100%; width: 25.7%;
+  z-index: 1; background-repeat: no-repeat; background-size: 400% 100%;
+  background-color: #0c1730;
+  opacity: 1;
+  transition: transform 0.95s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s ease 0.6s;
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+.img-slice.from-above { transform: translateY(-108%); }
+.img-slice.from-below { transform: translateY(108%); }
+.img-slice.settled { transform: none; opacity: 0; }
+
+.product-overlay span {
+  font-size: 0.72rem; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--gold-300); font-weight: 600;
+}
+.product-overlay em {
+  font-style: normal; font-size: 0.6rem; letter-spacing: 0.18em;
+  text-transform: uppercase; color: rgba(244, 240, 230, 0.75); margin-left: 12px;
+}
+
+/* ============ MOBILE POLISH ============ */
+@media (max-width: 600px) {
+  body { font-size: 1.04rem; }
+  .container { width: 91%; }
+  .section { padding: 62px 0; }
+
+  .brand-text strong { font-size: 1.12rem; letter-spacing: 0.1em; }
+  .eyebrow { letter-spacing: 0.28em; font-size: 0.68rem; }
+
+  .hero-content h1 { font-size: clamp(2.05rem, 8.6vw, 2.9rem); }
+  .hero-sub { margin: 20px 0 28px; }
+  .hero-actions { gap: 12px; }
+  .hero-actions .btn { flex: 1 1 100%; padding: 15px 20px; }
+  .hero-dots { top: calc(var(--header-h) + 14px); bottom: auto; right: 18px; }
+
+  .gem-marquee { padding: 14px 0; }
+  .marquee-track span { font-size: 0.8rem; letter-spacing: 0.16em; padding-right: 40px; }
+  .marquee-track i { margin: 0 16px; }
+
+  .filter-pills { gap: 8px; }
+  .pill { padding: 9px 16px; font-size: 0.72rem; }
+  .result-count { font-size: 0.72rem; }
+  .product-grid { gap: 20px; }
+  .product-body { padding: 18px 16px 20px; }
+  .product-body h3 { font-size: 1.18rem; }
+  .price { font-size: 1.32rem; }
+  .whatsapp-inquire { font-size: 0.7rem; padding: 11px 10px; }
+
+  .heritage-media { min-height: 0; margin-bottom: 14px; }
+  .hm-main { position: relative; width: 100%; aspect-ratio: 4 / 3.4; }
+  .hm-small { display: none; }
+  .hm-badge { top: auto; bottom: -16px; left: 10px; right: auto; border-radius: var(--radius); }
+
+  .cta-panel { padding: 26px 20px; }
+  .cta-panel .btn { width: 100%; }
+  .t-card { padding: 28px 22px; }
+  .t-card::before { font-size: 3.6rem; }
+
+  .map-wrap, .map-wrap iframe { min-height: 280px; }
+  .info-list li { gap: 14px; }
+  .form-panel { padding: 24px 18px; }
+  .field input, .field select, .field textarea,
+  .newsletter-form input, select { font-size: 16px !important; }
+  .newsletter-form { width: 100%; flex-direction: column; gap: 10px; }
+  .newsletter-form input { width: 100%; min-width: 0; }
+  .newsletter-form .btn { width: 100%; }
+  .appt-num { width: 34px; height: 34px; font-size: 0.95rem; }
+
+  .footer-bottom .fb-links { gap: 14px; flex-wrap: wrap; justify-content: center; }
+}
+
+@media (max-width: 380px) {
+  .brand-text small { display: none; }
+  .brand-text strong { font-size: 1.02rem; }
+}
+
 </style>
 </head>
 <body data-page="home">
@@ -1294,9 +1373,9 @@ function cardHTML(p) {
   <article class="product-card">
     <div class="product-media">
       ${gemWatermark(p.color)}
-      <img src="${p.img}" alt="${p.name}" loading="lazy" onerror="this.style.display='none'">
+      <img src="${p.img}" alt="${p.name}" loading="lazy" onerror="this.style.display='none';var sl=this.parentElement.querySelectorAll('.img-slice');for(var j=0;j<sl.length;j++){sl[j].remove();}">
       <span class="product-badge ${p.badgeRare ? "badge-rare" : ""}">${p.badge}</span>
-      <div class="product-overlay"><span style="font-size:.72rem;letter-spacing:.24em;text-transform:uppercase;color:#ecd07f;">NGJA Certified</span></div>
+      <div class="product-overlay"><span>${p.typeLabel}</span><em>NGJA Certified</em></div>
     </div>
     <div class="product-body">
       <p class="product-type">${p.typeLabel}</p>
@@ -1320,6 +1399,43 @@ function cardHTML(p) {
 function staggerCards(container) {
   container.querySelectorAll(".product-card").forEach((card, i) => {
     card.style.animationDelay = Math.min(i * 80, 480) + "ms";
+  });
+}
+
+function initSliceReveal() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (!("IntersectionObserver" in window)) return;
+
+  const io = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        io.unobserve(entry.target);
+        entry.target.querySelectorAll(".img-slice").forEach((slice, i) => {
+          setTimeout(() => slice.classList.add("settled"), 100 * i);
+        });
+      });
+    },
+    { threshold: 0.3 }
+  );
+
+  document.querySelectorAll(".product-media").forEach((media) => {
+    if (media.dataset.slicesReady) return;
+    media.dataset.slicesReady = "1";
+
+    const img = media.querySelector("img");
+    const src = img ? img.getAttribute("src") || "" : "";
+    if (!src) return;
+    if (img.style.display === "none" || (img.complete && img.naturalWidth === 0)) return;
+
+    for (let i = 0; i < 4; i++) {
+      const slice = document.createElement("span");
+      slice.className = "img-slice " + (i % 2 ? "from-below" : "from-above");
+      slice.style.left = i * 25 + "%";
+      slice.style.backgroundImage = `url("${src}")`;
+      media.appendChild(slice);
+    }
+    io.observe(media);
   });
 }
 
@@ -1351,6 +1467,7 @@ function initProducts() {
   if (!isCollectionPage()) {
     grid.innerHTML = PRODUCTS.slice(0, 6).map(cardHTML).join("");
     staggerCards(grid);
+    initSliceReveal();
     return;
   }
 
@@ -1361,6 +1478,7 @@ function initProducts() {
     const list = getFiltered();
     grid.innerHTML = list.map(cardHTML).join("");
     staggerCards(grid);
+    initSliceReveal();
     empty.hidden = list.length !== 0;
     countEl.innerHTML =
       list.length === PRODUCTS.length
